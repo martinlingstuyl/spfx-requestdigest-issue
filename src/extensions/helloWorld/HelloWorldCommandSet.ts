@@ -1,53 +1,37 @@
 import { Log } from '@microsoft/sp-core-library';
 import {
   BaseListViewCommandSet,
-  Command,
-  IListViewCommandSetExecuteEventParameters,
-  ListViewStateChangedEventArgs
+  IListViewCommandSetExecuteEventParameters
 } from '@microsoft/sp-listview-extensibility';
 import { Dialog } from '@microsoft/sp-dialog';
-import HelloWorldDialog from './HelloWorldDialog';
+import { ISPFxService, SPFxService } from '../../SPFxService';
 
-/**
- * If your command set uses the ClientSideComponentProperties JSON input,
- * it will be deserialized into the BaseExtension.properties object.
- * You can define an interface to describe it.
- */
 export interface IHelloWorldCommandSetProperties {
-  // This is an example; replace with your own properties
-  sampleTextOne: string;
-  sampleTextTwo: string;
 }
 
 const LOG_SOURCE: string = 'HelloWorldCommandSet';
 
 export default class HelloWorldCommandSet extends BaseListViewCommandSet<IHelloWorldCommandSetProperties> {
+  private _SPFxService: ISPFxService;
 
   public onInit(): Promise<void> {
     Log.info(LOG_SOURCE, 'Initialized HelloWorldCommandSet');
+    this._SPFxService = this.context.serviceScope.consume(SPFxService.serviceKey);
 
     return Promise.resolve();
   }
 
   public onExecute(event: IListViewCommandSetExecuteEventParameters): void {
     
-    const dialog = new HelloWorldDialog(this.context.serviceScope, this.context.pageContext.web.absoluteUrl);
+    const digest = this._SPFxService.getFormDigest();
+    const message = `Current time: ${(new Date()).toISOString()} / Current digest ${digest.split(',')[1]}`;
     
-    switch (event.itemId) {
-      case 'COMMAND_1':
-        dialog.show().then(() => {
-
-          // 
-
-        }, (error: Error) => {
+    Dialog.alert(message).then(() => {
+      //do nothing
+    }, (error: Error) => {
           if (console && console.error && error) {
             console.error(error);
           }
-        }); 
-        break;
-      default:
-        throw new Error('Unknown command');
-    }
+    });    
   }
-
 }
